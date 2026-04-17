@@ -1,0 +1,69 @@
+---
+- name: Install python3-dnf for DNF support
+  ansible.builtin.raw: dnf install -y python3-dnf
+  become: yes
+  when: not ansible_check_mode
+  tags: [postgresql, bootstrap]
+
+- name: Gather facts again after python3-dnf installation
+  ansible.builtin.setup:
+  when: not ansible_check_mode
+  tags: [postgresql, bootstrap]
+
+- name: Install PostgreSQL 13 official repository RPM
+  ansible.builtin.yum:  # Используем yum вместо dnf (совместим с dnf)
+    name: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{ ansible_distribution_major_version }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+    state: present
+    disable_gpg_check: yes
+  become: yes
+  when: not ansible_check_mode
+  tags: [postgresql, repo]
+
+- name: Disable built-in PostgreSQL module (for RHEL 8 and above)
+  ansible.builtin.shell: |
+    if command -v dnf &> /dev/null; then
+      dnf module disable postgresql -y
+    fi
+  become: yes
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version | int >= 8 and not ansible_check_mode
+  tags: [postgresql, repo]
+
+- name: Install PostgreSQL 13.23 server and client using yum module
+  ansible.builtin.yum:
+    name:
+      - "https://download.postgresql.org/pub/repos/yum/13/redhat/rhel-{{ ansible_distribution_major_version }}-x86_64/postgresql13-server-13.23-1PGDG.rhel{{ ansible_distribution_major_version }}.x86_64.rpm"
+      - "https://download.postgresql.org/pub/repos/yum/13/redhat/rhel-{{ ansible_distribution_major_version }}-x86_64/postgresql13-13.23-1PGDG.rhel{{ ansible_distribution_major_version }}.x86_64.rpm"
+      - "https://download.postgresql.org/pub/repos/yum/13/redhat/rhel-{{ ansible_distribution_major_version }}-x86_64/postgresql13-libs-13.23-1PGDG.rhel{{ ansible_distribution_major_version }}.x86_64.rpm"
+    state: present
+    disable_gpg_check: yes
+  become: yes
+  tags: [postgresql, install]
+
+- name: Initialize PostgreSQL database
+  ansible.builtin.command:
+    cmd: /usr/pgsql-13/bin/postgresql-13-setup initdb
+    creates: /var/lib/pgsql/13/data/PG_VERSION
+  become: yes
+  tags: [postgresql, init]
+  when: not ansible_check_mode
+
+- name: Configure pg_hba.conf with ACL 127.0.0.1/32 md5
+  ansible.builtin.template:
+    src: pg_hba.conf.j2
+    dest: /var/lib/pgsql/13/data/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: '0600'
+  become: yes
+  notify: restart postgresql
+  tags: [postgresql, config]
+
+- name: Ensure PostgreSQL is running and enabled
+  ansible.builtin.service:
+    name: postgresql-13
+    state: started
+    enabled: yes
+  become: yes
+  tags: [postgresql, service]
+  when: not ansible_check_mode

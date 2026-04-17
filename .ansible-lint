@@ -1,0 +1,9 @@
+---
+skip_list:
+  - fqcn-builtins  # Allow using ansible.builtin explicitly
+  - var-naming     # Allow non-standard var names for simplicity
+  - yaml-line-length
+warn_list:
+  - no-changed-when
+  - command-instead-of-module
+  - name[casing]

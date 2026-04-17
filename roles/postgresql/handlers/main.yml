@@ -1,0 +1,7 @@
+---
+- name: restart postgresql
+  ansible.builtin.service:
+    name: postgresql-13
+    state: restarted
+  become: yes
+

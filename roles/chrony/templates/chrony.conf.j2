@@ -1,0 +1,9 @@
+# Chrony configuration managed by Ansible
+server {{ chrony_servers[0] }} iburst
+server {{ chrony_servers[1] }} iburst
+server {{ chrony_servers[2] }} iburst
+
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+logdir /var/log/chrony

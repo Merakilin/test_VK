@@ -1,0 +1,37 @@
+---
+- name: Ensure nginx is installed
+  ansible.builtin.package:
+    name: nginx
+    state: present
+  become: yes
+  tags: [nginx, install]
+  register: nginx_install
+
+- name: Create nginx html directory
+  ansible.builtin.file:
+    path: "{{ nginx_html_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  tags: [nginx, config]
+
+- name: Deploy index.html from template
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: "{{ nginx_html_path }}/index.html"
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  notify: restart nginx
+  tags: [nginx, config]
+
+- name: Ensure nginx is running and enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+  become: yes
+  tags: [nginx, service]

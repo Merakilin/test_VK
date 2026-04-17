@@ -1,0 +1,17 @@
+all:
+  children:
+    ntp_servers:
+      hosts:
+        ntp:
+          ansible_host: localhost
+          ansible_connection: local
+    app_servers:
+      hosts:
+        app:
+          ansible_host: localhost
+          ansible_connection: local
+    db_servers:
+      hosts:
+        db:
+          ansible_host: localhost
+          ansible_connection: local

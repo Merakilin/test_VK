@@ -1,0 +1,46 @@
+---
+- name: Deploy chrony on ntp server
+  hosts: ntp_servers
+  gather_facts: yes
+  roles:
+    - role: chrony
+      tags: [chrony, ntp]
+  post_tasks:
+    - name: Debug chrony status
+      ansible.builtin.debug:
+        msg: "Chrony installed and configured on {{ inventory_hostname }}"
+      tags: [chrony, ntp]
+
+- name: Deploy nginx on app server
+  hosts: app_servers
+  gather_facts: yes
+  roles:
+    - role: nginx
+      tags: [nginx, app]
+  post_tasks:
+    - name: Get nginx version
+      ansible.builtin.shell:
+        cmd: nginx -v 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'
+      register: nginx_version
+      changed_when: false
+      tags: [nginx, debug]
+
+    - name: Show summary
+      ansible.builtin.debug:
+        msg:
+          - "NGINX Version: {{ nginx_version.stdout }}"
+          - "Access log: /var/log/nginx/access.log"
+          - "Error log: /var/log/nginx/error.log"
+      tags: [nginx, debug]
+
+- name: Deploy PostgreSQL on db server
+  hosts: db_servers
+  gather_facts: yes
+  roles:
+    - role: postgresql
+      tags: [postgresql, db]
+  post_tasks:
+    - name: Debug PostgreSQL status
+      ansible.builtin.debug:
+        msg: "PostgreSQL 13.23 installed with ACL 127.0.0.1/32 md5 on {{ inventory_hostname }}"
+      tags: [postgresql, db]
