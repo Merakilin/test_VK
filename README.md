@@ -4,6 +4,7 @@
 2. Перейти в данный репозиторий
 3. Установить ansible(если не установлен)
 4. Проверка
+
 #в check mode (без реальных изменений)
 ansible-playbook -i inventory.yml playbook.yml --check
 
